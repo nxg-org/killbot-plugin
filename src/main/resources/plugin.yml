@@ -1,0 +1,12 @@
+name: TerminatorNPC
+version: ${project.version}
+main: me.killbot.KillBot
+api-version: 1.17
+authors: [ Generel_Schwerz ]
+commands:
+  kbsummon:
+    usage: /kbsummon <playername> <number of bots>
+  kbclear:
+    usage: /kbclear
+  kbloadout:
+    usage: /kbloadout
