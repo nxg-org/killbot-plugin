@@ -1,11 +1,9 @@
 package com.killbot.logic;
 
 import com.killbot.KillBot;
-import com.killbot.manager.BotManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.util.Vector;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
