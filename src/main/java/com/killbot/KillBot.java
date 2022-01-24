@@ -4,7 +4,10 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.killbot.handlers.KnockbackHandler;
 import com.killbot.logic.Logic;
+import com.killbot.logic.TestLogic;
 import com.killbot.manager.BotManager;
+import com.killbot.manager.RenderManager;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -13,21 +16,31 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class KillBot extends JavaPlugin {
 
     private static KillBot plugin;
+    private static Logic logic;
+    private static RenderManager renderer;
     private BotManager manager;
-    private Logic logic;
+
 
     @Override
     public void onEnable() {
         plugin = this;
         manager = new BotManager();
-        logic = manager.getLogic();
+        renderer = new RenderManager();
 
         PacketEvents.getAPI().getEventManager().registerListener(new KnockbackHandler(), PacketListenerPriority.LOW, true);
         PacketEvents.getAPI().init();
     }
 
+
     @Override
     public void onDisable() {
+    }
+
+    /**
+     * @return the renderer
+     */
+    public static RenderManager getRenderer() {
+        return renderer;
     }
 
     /**
@@ -62,7 +75,7 @@ public final class KillBot extends JavaPlugin {
      * @param logic the logic to set
      */
     public void setLogic(Logic logic) {
-        this.logic = logic;
+        KillBot.logic = logic;
     }
 
 }

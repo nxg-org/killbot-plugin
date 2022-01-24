@@ -5,6 +5,10 @@ import com.killbot.manager.BotManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.util.Vector;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 
 import org.bukkit.inventory.ItemStack;
 
@@ -15,11 +19,15 @@ public abstract class Logic {
     public String username;
     public BukkitScheduler scheduler;
     public ItemStack defaultItem;
-    private BotManager manager;
+    private ServerPlayer bot;
 
-    public Logic(BotManager botManager) {
+    protected Logic(ServerPlayer player) {
         plugin = KillBot.getPlugin();
-        manager = botManager;
+        bot = player;
+    }
+
+    public ServerPlayer getBot() {
+        return bot;
     }
 
     public void setTarget(Player player) {
@@ -34,9 +42,14 @@ public abstract class Logic {
         target = null;
     }
 
-    public void distanceTo() {
-
+    public double distanceTo(Vec3 vec) {
+        return bot.position().distanceTo(vec);
     }
+
+
+    public abstract void init();
+
+    public abstract void release();
 
     public abstract void moveToPosition(Location loc);
 

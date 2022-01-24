@@ -10,17 +10,12 @@ import com.mojang.authlib.GameProfile;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.bukkit.util.Vector;
 
-import net.minecraft.commands.arguments.EntityAnchorArgument;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.world.item.ItemStack;
-
-import net.minecraft.world.entity.player.Player;
 
 public class MyBot extends ServerPlayer {
 
@@ -30,22 +25,35 @@ public class MyBot extends ServerPlayer {
     }
 
     public static MyBot createBot(Location loc, String username) {
-        return createBot(loc, username, MojangAPI.getSkin(username));
+        return createBot(username, MojangAPI.getSkin(username), loc);
     }
 
-    public static MyBot createBot(Location loc, String username, String[] skin) {
-        MinecraftServer nmsServer = (MinecraftServer) Bukkit.getServer();
+    public static MyBot createBot(String username, String[] skin, Location loc) {
         ServerLevel nmsWorld = (ServerLevel) Objects.requireNonNull(loc.getWorld());
+        return createBot(username, skin, loc.toVector(), nmsWorld);
+
+    }
+
+    public static MyBot createBot(String username, String[] skin, Vector loc, ServerLevel nmsWorld) {
+        return createBot(username, skin, nmsWorld, loc.getX(), loc.getY(), loc.getZ());
+    }
+
+    public static MyBot createBot(String username, String[] skin, ServerLevel nmsWorld, double x, double y, double z) {
+        MinecraftServer nmsServer = (MinecraftServer) Bukkit.getServer();
 
         UUID uuid = BotUtils.randomSteveUUID();
         MyBot npc = new MyBot(nmsServer, nmsWorld, new GameProfile(uuid, username));
-        KillBot.getPlugin().getManager().getBots().add(npc);
-        return npc;
+        nmsWorld.addEntity(npc, SpawnReason.CUSTOM);
+        npc.setPos(x, y, z);
+        npc.getBukkitEntity().setNoDamageTicks(0);
 
+        KillBot.getPlugin().getManager().getBots().add(npc); // may move to manager.
+        KillBot.getRenderer().renderToAll(npc); // may move to manager.
+        return npc;
     }
 
-    public void setItem(ItemStack itemStack) {
-
+    public Vector getVelocity() {
+        return this.getVelocity().clone();
     }
 
 }
