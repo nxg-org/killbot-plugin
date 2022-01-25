@@ -1,6 +1,4 @@
-package com.killbot.logic.test;
-
-import com.killbot.logic.Logic;
+package com.killbot.logic;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

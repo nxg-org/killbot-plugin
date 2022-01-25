@@ -3,9 +3,15 @@ package com.killbot.api;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import net.minecraft.server.level.ServerPlayer;
+
 import org.bukkit.command.CommandExecutor;
 
+import java.util.Optional;
+
 import com.killbot.KillBot;
+import com.killbot.bot.MyBot;
 import com.killbot.util.Debugger;
 
 import org.apache.commons.lang.StringUtils;
@@ -21,7 +27,8 @@ public class CreateKillBotCommand implements CommandExecutor {
         if (sender instanceof Player) {
             if (sender.hasPermission("killbot.summon")) {
                 Player player = (Player) sender;
-                String name = StringUtils.defaultString(args[0], "KillBot");
+
+                String name = Optional.of(args[0]).orElse("KillBot");// StringUtils.defaultString(args[0], "KillBot");
                 Integer amount = NumberUtils.toInt(args[1], 1);
                 Player target = null;
                 if (args.length == 3) {
@@ -41,6 +48,8 @@ public class CreateKillBotCommand implements CommandExecutor {
                 } else {
                     KillBot.getPlugin().getManager().createBots(amount, name, player.getLocation());
                 }
+
+          
 
                 return true;
             }

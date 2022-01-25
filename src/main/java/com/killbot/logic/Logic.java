@@ -4,9 +4,9 @@ import com.killbot.KillBot;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.util.Vector;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.phys.Vec3;
 
 import org.bukkit.inventory.ItemStack;
 
@@ -40,8 +40,8 @@ public abstract class Logic {
         target = null;
     }
 
-    public double distanceTo(Vec3 vec) {
-        return bot.position().distanceTo(vec);
+    public double distanceTo(Vector vec) {
+        return bot.position().distanceToSqr(vec.getX(), vec.getY(), vec.getZ());
     }
 
 

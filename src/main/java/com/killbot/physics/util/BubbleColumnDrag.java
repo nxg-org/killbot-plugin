@@ -19,7 +19,6 @@ public class BubbleColumnDrag {
             maxDown = -0.3f;
             up = 0.06f;
             maxUp = 0.7f;
-    
         }
     }
 }

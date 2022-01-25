@@ -1,12 +1,16 @@
-name: TerminatorNPC
-version: ${project.version}
-main: me.killbot.KillBot
+name: KillBot
+version: 1.0.0
+main: com.killbot.KillBot
 api-version: 1.17
 authors: [ Generel_Schwerz ]
 commands:
   kbsummon:
-    usage: /kbsummon <playername> <number of bots>
+    usage: /kbsummon <playername> <number of bots> [<targetname> | <x> <y> <z>]
   kbclear:
     usage: /kbclear
   kbloadout:
     usage: /kbloadout
+
+# load: POSTWORLD
+# depend:
+# - packetevents

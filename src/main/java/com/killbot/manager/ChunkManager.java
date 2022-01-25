@@ -3,8 +3,10 @@ package com.killbot.manager;
 import org.bukkit.Chunk;
 import org.bukkit.World;
 
-import net.minecraft.server.level.ServerLevel;
+// import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+// import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ChunkPos;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +28,7 @@ public class ChunkManager {
         World server = player.getBukkitEntity().getWorld();
         String hash = server.getName(); // dunno if this is best.
 
+        // b = x, c = z
         ChunkPos pos = player.chunkPosition();
         for (int i = pos.x - 1; i <= pos.x + 1; i++) {
             for (int j = pos.z - 1; j <= pos.z + 1; j++) {
