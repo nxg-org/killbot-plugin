@@ -4,8 +4,16 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,51 +41,56 @@ public class BotUtils {
         return randomSteveUUID();
     }
 
-    public static boolean solidAt(World world, double x, double y, double z) { // not perfect, still cuts corners of fences
-        Block block = world.getBlockAt((int) x, (int)y, (int)z); // fast rounding.
-        BoundingBox box = block.getBoundingBox();
 
 
-        double minX = box.getMinX();
-        double minY = box.getMinY();
-        double minZ = box.getMinZ();
 
-        double maxX = box.getMaxX();
-        double maxY = box.getMaxY();
-        double maxZ = box.getMaxZ();
-
-        return x > minX && x < maxX && y > minY && y < maxY && z > minZ && z < maxZ;
+    public static void safeTeleport(Entity bot, Vector loc) {
+        safeTeleport(bot, loc.getX(), loc.getY(), loc.getZ());
     }
 
-    public static List<Block> getSpawnOffsets(World world, Vector vec) {
-        List<Block> lazy = new ArrayList<Block>() {
-            {
-                add(world.getBlockAt(vec.getBlockX(), vec.getBlockY(), vec.getBlockZ()));
-                add(world.getBlockAt(vec.getBlockX(), vec.getBlockY() + 1, vec.getBlockZ()));
-                add(world.getBlockAt(vec.getBlockX(), vec.getBlockY() + 2, vec.getBlockZ()));
+    public static void safeTeleport(Entity bot, double d0, double d1, double d2) {
+        double d3 = bot.getX();
+        double d4 = bot.getY();
+        double d5 = bot.getZ();
+        double d6 = d1;
+        boolean flag1 = false;
+        BlockPos blockposition = new BlockPos(d0, d1, d2);
+        Level level = bot.level;
+        if (level.hasChunkAt(blockposition)) {
+            boolean flag2 = false;
+
+            while (!flag2 && blockposition.getY() > level.getMinBuildHeight()) {
+                BlockPos blockposition1 = blockposition.down();
+                BlockState iblockdata = level.getBlockState(blockposition1);
+                if (iblockdata.getMaterial().blocksMotion()) {
+                    flag2 = true;
+                } else {
+                    --d6;
+                    blockposition = blockposition1;
+                }
             }
-        };
-        return lazy;
-    }
 
-    public static Vector spawnPos(World world, Vector org) {
-        List<Block> check = getSpawnOffsets(world, org);
-        if (check.stream().anyMatch(block -> !block.isEmpty())) {
-            return org.setX(org.getX() + offsetCheckPos(world, check, 0));
+            if (flag2) {
+                bot.setPos(d0, d6, d2);
+                if (level.noCollision(bot) && !level.containsAnyLiquid(bot.getBoundingBox())) {
+                    flag1 = true;
+                }
+
+                bot.setPos(d3, d4, d5);
+                if (flag1) {
+
+                    EntityTeleportEvent teleport = new EntityTeleportEvent(bot.getBukkitEntity(),
+                            new Location(level.getWorld(), d3, d4, d5), new Location(level.getWorld(), d0, d6, d2));
+                    level.getCraftServer().getPluginManager().callEvent(teleport);
+                    if (teleport.isCancelled()) {
+                        return;
+                    }
+
+                    Location to = teleport.getTo();
+                    bot.teleportTo(to.getX(), to.getY(), to.getZ());
+                }
+
+            }
         }
-
-        return org;
-    }
-
-    public static int offsetCheckPos(World world, List<Block> blocks, int offset) {
-        if (blocks.stream().anyMatch(block -> !block.isEmpty())) {
-            offset++;
-            Block temp = blocks.get(2);
-            List<Block> stream = blocks.subList(1, 3);
-            stream.add(world.getBlockAt(temp.getX(), temp.getY() + 1, temp.getZ()));
-            return offsetCheckPos(world, stream, offset);
-        }
-
-        return offset;
     }
 }

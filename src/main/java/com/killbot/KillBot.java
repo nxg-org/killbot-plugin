@@ -4,6 +4,7 @@ package com.killbot;
 // import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.killbot.api.CreateKillBotCommand;
 import com.killbot.api.DestroyKillBotsCommand;
+import com.killbot.api.HuntCommand;
 // import com.killbot.handlers.KnockbackHandler;
 import com.killbot.logic.Logic;
 import com.killbot.manager.BotManager;
@@ -32,6 +33,7 @@ public final class KillBot extends JavaPlugin {
 
         getCommand("kbsummon").setExecutor(new CreateKillBotCommand());
         getCommand("kbclear").setExecutor(new DestroyKillBotsCommand());
+        getCommand("kbhunt").setExecutor(new HuntCommand());
     }
 
     @Override

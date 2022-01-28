@@ -10,6 +10,8 @@ commands:
     usage: /kbclear
   kbloadout:
     usage: /kbloadout
+  kbhunt:
+    usage: /kbhunt <playername>
 
 # load: POSTWORLD
 # depend:

@@ -1,38 +1,43 @@
 package com.killbot.logic;
 
 import com.killbot.KillBot;
+import com.killbot.bot.BaseBot;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.util.Vector;
 
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 
 import org.bukkit.inventory.ItemStack;
 
 public abstract class Logic {
 
     protected final KillBot plugin;
-    protected Player target;
-    public String username;
-    public BukkitScheduler scheduler;
-    public ItemStack defaultItem;
-    private ServerPlayer bot;
+    protected final BukkitScheduler scheduler;
+    protected final BaseBot bot;
+    protected Entity target;
 
-    protected Logic(ServerPlayer player) {
+    protected int taskID;
+
+    protected Logic(BaseBot player) {
         plugin = KillBot.getPlugin();
+        scheduler = Bukkit.getScheduler();
         bot = player;
     }
 
-    public ServerPlayer getBot() {
+    public BaseBot getBot() {
         return bot;
     }
 
-    public void setTarget(Player player) {
+    public void setTarget(Entity player) {
         target = player;
     }
 
-    public Player getTarget() {
+    public Entity getTarget() {
         return target;
     }
 
@@ -40,14 +45,23 @@ public abstract class Logic {
         target = null;
     }
 
+    public void init() {
+        taskID = scheduler.scheduleSyncRepeatingTask(plugin, this::perTick, 0, 1);
+    };
+
+    public void release() {
+        scheduler.cancelTask(taskID);
+    };
+
+    
+
     public double distanceTo(Vector vec) {
         return bot.position().distanceToSqr(vec.getX(), vec.getY(), vec.getZ());
     }
 
 
-    public abstract void init();
 
-    public abstract void release();
+    public abstract void perTick();
 
     public abstract void moveToPosition(Location loc);
 

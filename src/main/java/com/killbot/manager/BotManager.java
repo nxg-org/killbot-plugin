@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.killbot.bot.MyBot;
+import com.killbot.bot.BaseBot;
 import com.killbot.logic.Logic;
 import com.killbot.logic.TestLogic;
 import com.killbot.util.BotUtils;
@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity.RemovalReason;
 
 //3345
@@ -29,7 +28,7 @@ import net.minecraft.world.entity.Entity.RemovalReason;
 public class BotManager {
 
     private Integer botCount = 0;
-    private final Set<ServerPlayer> bots;
+    private final Set<BaseBot> bots;
     private final Set<Logic> activeBots;
 
     public BotManager() {
@@ -38,7 +37,7 @@ public class BotManager {
         activeBots = ConcurrentHashMap.newKeySet();
     }
 
-    public Set<ServerPlayer> getBots() {
+    public Set<BaseBot> getBots() {
         return bots;
     }
 
@@ -58,7 +57,7 @@ public class BotManager {
 
     public void createBots(int amount, String tempName, Player target) {
         for (int i = 0; i < amount; i++) {
-            createBot(tempName, target.getWorld(), BotUtils.spawnPos(target.getWorld(), target.getLocation().toVector().clone().add(MathUtils.randomCircleOffset(5))));
+            createBot(tempName, target.getWorld(), target.getLocation().toVector().clone().add(MathUtils.randomCircleOffset(5)));
         }
     }
 
@@ -80,17 +79,17 @@ public class BotManager {
     public void createBot(String tempName, Location loc) {
         botCount++;
         String botName = tempName;
-        MyBot.createBot(loc, botName);
+        BaseBot.createBot(loc, botName);
     }
 
     public void destroyAllBots() {
         
-        for (ServerPlayer bot : bots) {
+        for (BaseBot bot : bots) {
             destroyBot(bot);
         }
     }
 
-    public void destroyBot(ServerPlayer bot) {
+    public void destroyBot(BaseBot bot) {
             Logic log = getFirstActiveMatching(bot);
             if (log != null) {
                 log.release();
@@ -101,7 +100,7 @@ public class BotManager {
     }
 
     public void destroyBot(String ident) {
-        ServerPlayer bot = getFirstBotMatching(ident);
+        BaseBot bot = getFirstBotMatching(ident);
         if (bot != null) {
             Logic log = getFirstActiveMatching(bot);
             if (log != null) {
@@ -112,19 +111,34 @@ public class BotManager {
         }
     }
 
-    private void packetRemoval(ServerPlayer bot) {
+    private void packetRemoval(BaseBot bot) {
         bots.remove(bot);
         ServerLevel nmsWorld = ((CraftWorld) Objects.requireNonNull(bot.getBukkitEntity().getWorld())).getHandle();
         nmsWorld.removePlayerImmediately(bot, RemovalReason.DISCARDED);
     }
 
-    public void applyLogic(ServerPlayer player) {
-        Logic logicRunner = new TestLogic(player);
+
+    public void applyLogicToAll() {
+        for (BaseBot bot: bots) {
+            removeLogic(bot);
+            applyLogic(bot);
+        }
+    }
+
+
+    public void removeLogicFromAll() {
+        for (BaseBot bot: bots) {
+            removeLogic(bot);
+        }
+    }
+
+    public void applyLogic(BaseBot player) {
+        Logic logicRunner = TestLogic.apply(player);
         activeBots.add(logicRunner);
 
     }
 
-    public void removeLogic(ServerPlayer player) {
+    public void removeLogic(BaseBot player) {
         for (Logic bot : activeBots) {
             if (bot.getBot() == player) {
                 bot.release();
@@ -133,8 +147,8 @@ public class BotManager {
         }
     };
 
-    public ServerPlayer getFirstBotMatching(String name) {
-        for (ServerPlayer bot : bots) {
+    public BaseBot getFirstBotMatching(String name) {
+        for (BaseBot bot : bots) {
             if (bot.getName().equals(name)) {
                 return bot;
             }
@@ -151,7 +165,7 @@ public class BotManager {
         return null;
     }
 
-    public Logic getFirstActiveMatching(ServerPlayer findBot) {
+    public Logic getFirstActiveMatching(BaseBot findBot) {
         for (Logic bot : activeBots) {
             if (bot.getBot() == findBot) {
                 return bot;
@@ -160,18 +174,18 @@ public class BotManager {
         return null;
     }
 
-    public ServerPlayer getClosest(Player player) {
+    public BaseBot getClosest(Player player) {
         return getClosest(player.getLocation().toVector());
     }
 
-    public ServerPlayer getClosest(Location loc) {
+    public BaseBot getClosest(Location loc) {
         return getClosest(loc.toVector());
     }
 
-    public ServerPlayer getClosest(Vector loc) {
-        ServerPlayer foundBot = null;
+    public BaseBot getClosest(Vector loc) {
+        BaseBot foundBot = null;
         double distance = 1000;
-        for (ServerPlayer bot : bots) {
+        for (BaseBot bot : bots) {
             double dist = bot.position().distanceToSqr(loc.getX(), loc.getY(), loc.getZ());
             if (dist < distance) {
                 foundBot = bot;

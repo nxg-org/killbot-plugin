@@ -1,7 +1,13 @@
 package com.killbot.util;
 
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
+
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -67,20 +73,6 @@ public class MathUtils {
         return new Vector(x, 0, z);
     }
 
-    public static boolean isNotFinite(Vector vector) {
-        return !NumberConversions.isFinite(vector.getX()) || !NumberConversions.isFinite(vector.getY()) || !NumberConversions.isFinite(vector.getZ());
-    }
-
-    public static void clean(Vector vector) {
-        if (!NumberConversions.isFinite(vector.getX())) vector.setX(0);
-        if (!NumberConversions.isFinite(vector.getY())) vector.setY(0);
-        if (!NumberConversions.isFinite(vector.getZ())) vector.setZ(0);
-    }
-
-    public static <E> E getRandomSetElement(Set<E> set) {
-        return set.isEmpty() ? null : set.stream().skip(RANDOM.nextInt(set.size())).findFirst().orElse(null);
-    }
-
     public static double square(double n) {
         return n * n;
     }
@@ -98,15 +90,6 @@ public class MathUtils {
         list.sort(Map.Entry.comparingByValue());
         Collections.reverse(list);
         return list;
-    }
-
-    public static double generateConnectionValue(List<Double> list, double mutationSize) {
-        double[] bounds = getBounds(list, mutationSize);
-        return random(bounds[0], bounds[1]);
-    }
-
-    public static double generateConnectionValue(List<Double> list) {
-        return generateConnectionValue(list, 0);
     }
 
     public static double random(double low, double high) {
@@ -153,32 +136,28 @@ public class MathUtils {
         return (min(list) + max(list)) / 2D;
     }
 
-    public static double distribution(List<Double> list, double mid) {
-        return Math.sqrt(sum(list.stream().map(n -> Math.pow(n - mid, 2)).collect(Collectors.toList())) / list.size());
+    public static <T> T getRandomSetElement(Set<T> set) {
+        return set.isEmpty() ? null : set.stream().skip(RANDOM.nextInt(set.size())).findFirst().orElse(null);
     }
 
-    public static double[] getBounds(List<Double> list, double mutationSize) {
-        double mid = getMidValue(list);
-        double dist = distribution(list, mid);
-        double p = mutationSize * dist / Math.sqrt(list.size());
 
-        return new double[] {
-            mid - p,
-            mid + p
-        };
+
+    public static double trueDistance(Entity org, org.bukkit.entity.Entity dest) {
+        return MathUtils.trueDistanceRaw(org.getEyePosition(), ((CraftPlayer) dest).getHandle().getBoundingBox());
     }
 
-    public static double getMutationSize(int generation) {
-        int shift = 4;
+    public static double trueDistance(Entity org, Entity dest) {
+        return MathUtils.trueDistanceRaw(org.getEyePosition(), dest.getBoundingBox());
+    }
 
-        if (generation <= shift + 1) {
-            return 7.38905609893;
+    public static double trueDistanceRaw(final Vec3 point, final AABB aabb) {
+        double[] XYZ = { point.x, point.y, point.z };
+        double[] minXYZmaxXYZ = { aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ };
+        double[] res = new double[3];
+        for (int i = 0; i < 3; i++) {
+            res[i] = Math.max(Math.max(minXYZmaxXYZ[i] - XYZ[i], 0), XYZ[i] - minXYZmaxXYZ[i + 3]);
         }
-
-        double a = 0.8;
-        double b = -8.5 - shift;
-        double c = 2;
-
-        return Math.pow(a, generation + b) + c;
+        return Math.sqrt(res[0] * res[0] + res[1] * res[1] + res[2] * res[2]);
     }
+
 }
