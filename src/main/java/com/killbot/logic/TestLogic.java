@@ -3,6 +3,7 @@ package com.killbot.logic;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 
 import com.killbot.KillBot;
 import com.killbot.bot.BaseBot;
@@ -29,6 +30,7 @@ import org.bukkit.util.Vector;
 import io.netty.util.internal.MathUtil;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -46,19 +48,11 @@ import org.bukkit.Material;
 
 public class TestLogic extends Logic {
 
-    private int ticksSinceLastHurt;
+    private float reach;
+    private float viewDistance;
     private int strafeCounter;
     private Random random;
     private Controls currentStrafeDir;
-
-    private Entity lastVehicle;
-    private double vehicleFirstGoodX;
-    private double vehicleFirstGoodY;
-    private double vehicleFirstGoodZ;
-    private double vehicleLastGoodX;
-    private double vehicleLastGoodY;
-    private double vehicleLastGoodZ;
-    private boolean clientVehicleIsFloating;
 
     public TestLogic(BaseBot player) {
         super(player);
@@ -75,18 +69,38 @@ public class TestLogic extends Logic {
     @Override
     public void init() {
         super.init();
-        List<Player> targets = bot.getBukkitEntity().getWorld().getPlayers();
-        setTarget((org.bukkit.entity.Entity) targets.stream()
-                .filter(a -> !KillBot.getPlugin().getManager().getBots().contains(((CraftPlayer) a).getHandle()))
-                .sorted((a, b) -> Math.round(
-                        bot.distanceTo(((CraftPlayer) a).getHandle()) - bot.distanceTo(((CraftPlayer) b).getHandle())))
-                .toArray()[0]);
-        bot.getBukkitEntity().getInventory().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
+        Set<ServerPlayer> ignored = KillBot.getPlugin().getManager().getIgnored();
+        Set<BaseBot> bots = KillBot.getPlugin().getManager().getBots();
+
+        List<net.minecraft.world.entity.player.Player> targets = bot.level.getEntities(
+                net.minecraft.world.entity.EntityType.PLAYER,
+                AABB.unitCubeFromLowerCorner(bot.position()).inflate(this.viewDistance),
+                e -> !ignored.contains(e) && !bots.contains(e));
+        
+        if (targets.size() > 0) {
+            setTarget(targets.get(0).getBukkitEntity());
+            bot.getBukkitEntity().getInventory().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
+        }
+   
     }
 
     @Override
     public void release() {
         super.release();
+
+    }
+
+
+    public void realisticAttack(org.bukkit.entity.Entity e) {
+        realisticAttack(((CraftPlayer) e).getHandle());
+    }
+
+    public void realisticAttack(Entity e) {
+        if (MathUtils.trueDistance(bot, e) < this.reach) {
+            bot.lookAt(Anchor.EYES, e, Anchor.EYES);
+            bot.attack(e);
+            bot.swing(InteractionHand.MAIN_HAND);
+        }
 
     }
 
@@ -96,7 +110,6 @@ public class TestLogic extends Logic {
         bot.lookAt(Anchor.EYES, new Vec3(test.getX(), test.getY(), test.getZ()));
         bot.input.setControl(Controls.FORWARD, true);
     }
-
 
     private void mountHorse(net.minecraft.world.entity.animal.horse.Horse horse) {
         bot.lookAt(Anchor.EYES, horse, Anchor.EYES);
@@ -110,7 +123,7 @@ public class TestLogic extends Logic {
         } else if (!bot.isPassenger()) {
             List<net.minecraft.world.entity.animal.horse.Horse> horses = bot.level.getEntities(
                     net.minecraft.world.entity.EntityType.HORSE,
-                    AABB.unitCubeFromLowerCorner(bot.position()).inflate(bot.reach),
+                    AABB.unitCubeFromLowerCorner(bot.position()).inflate(this.reach),
                     e -> ((net.minecraft.world.entity.animal.horse.Horse) e).getPassengers().size() == 0);
             horses = horses.stream().sorted((a, b) -> Math.round(
                     bot.distanceTo(a)
@@ -120,7 +133,7 @@ public class TestLogic extends Logic {
                 mountHorse(horses.get(0));
             }
 
-            //(net.minecraft.world.entity.animal.horse.Horse) e).isSaddled() && 
+            // (net.minecraft.world.entity.animal.horse.Horse) e).isSaddled() &&
 
         } else {
             net.minecraft.world.entity.Entity entity = bot.getRootVehicle();
@@ -229,7 +242,7 @@ public class TestLogic extends Logic {
             float intelliRand = random.nextFloat();
             Controls smartDir = intelliRand < 0.5 ? Controls.LEFT : Controls.RIGHT;
             Controls oppositeSmartDir = intelliRand >= 0.5 ? Controls.LEFT : Controls.RIGHT;
-            if (bot.distanceTo(target) <= bot.reach + 3) {
+            if (bot.distanceTo(target) <= this.reach + 3) {
                 this.bot.input.setControl(smartDir, true);
                 this.bot.input.setControl(oppositeSmartDir, false);
                 this.currentStrafeDir = smartDir;
@@ -247,16 +260,18 @@ public class TestLogic extends Logic {
         float scale = bot.getAttackStrengthScale(0.5f);
         double dist = MathUtils.trueDistance(bot, target);
         boolean shouldSprint = bot.isOnGround() || bot.isUnderWater() || bot.getRootVehicle() != bot;
-        boolean twoToFourBlocks = Math.abs(dist - bot.reach) < 1;
+        boolean twoToFourBlocks = Math.abs(dist - this.reach) < 1;
         boolean targetUnderWater = ((CraftPlayer) target).getHandle().isUnderWater();
-        boolean shouldSink = bot.isInWater() && !bot.isUnderWater() && targetUnderWater && !MovementUtils.anyBlocksSolidUnderneath(bot);
-        boolean shouldJump = (!twoToFourBlocks && (bot.isOnGround() || !targetUnderWater)) && (bot.getRootVehicle() == bot);
+        boolean shouldSink = bot.isInWater() && !bot.isUnderWater() && targetUnderWater
+                && !MovementUtils.anyBlocksSolidUnderneath(bot);
+        boolean shouldJump = (!twoToFourBlocks && (bot.isOnGround() || !targetUnderWater))
+                && (bot.getRootVehicle() == bot);
         boolean shouldDismount = targetUnderWater;
 
         // Debugger.log(bot.getJumpRidingScale(), shouldJump);
         bot.input.setControl(Controls.JUMP, shouldJump);
         bot.input.setControl(Controls.SNEAK, shouldSink);
-        if ((scale < 0.1 || dist < bot.reach - 1) && (bot.isOnGround() || bot.isInWater())) {
+        if ((scale < 0.1 || dist < this.reach - 1) && (bot.isOnGround() || bot.isInWater())) {
             bot.input.setControl(Controls.SPRINT, false);
             bot.input.setControl(Controls.FORWARD, false);
             bot.input.setControl(Controls.BACK, true);
@@ -268,9 +283,9 @@ public class TestLogic extends Logic {
         }
 
         if (scale > 0.9) {
-            if (bot.getDeltaMovement().y < -0.3f && dist < bot.reach - 1) {
+            if (bot.getDeltaMovement().y < -0.3f && dist < this.reach - 1) {
                 attackTarget(true);
-            } else if (dist < bot.reach && (bot.isOnGround() || bot.isInWater() || bot.isPassenger())) {
+            } else if (dist < this.reach && (bot.isOnGround() || bot.isInWater() || bot.isPassenger())) {
                 attackTarget(false);
             }
 
@@ -294,7 +309,7 @@ public class TestLogic extends Logic {
             bot.input.setControl(Controls.SPRINT, false);
             bot.setSprinting(false);
         }
-        bot.realisticAttack(target);
+        this.realisticAttack(target);
 
     }
 

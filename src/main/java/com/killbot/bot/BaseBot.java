@@ -37,10 +37,6 @@ import net.minecraft.world.entity.Entity;
 
 public class BaseBot extends ControllablePlayer {
 
-    private int kills;
-    public double reach;
-
-
     public static BaseBot createBot(Location loc, String username) {
         return createBot(username, MojangAPI.getSkin(username), loc);
     }
@@ -87,20 +83,6 @@ public class BaseBot extends ControllablePlayer {
      */
     protected BaseBot(MinecraftServer minecraftserver, ServerLevel serverLevel, GameProfile gameprofile) {
         super(minecraftserver, serverLevel, gameprofile);
-        this.reach = 3.0D;
-    }
-
-    public void realisticAttack(org.bukkit.entity.Entity e) {
-        realisticAttack(((CraftPlayer) e).getHandle());
-    }
-
-    public void realisticAttack(Entity e) {
-        if (this.distanceTo(e) < this.reach) {
-            this.lookAt(Anchor.EYES, e, Anchor.EYES);
-            this.attack(e);
-            this.swing(InteractionHand.MAIN_HAND);
-        }
-
     }
 
 

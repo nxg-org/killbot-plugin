@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity.RemovalReason;
 
 //3345
@@ -27,18 +28,37 @@ import net.minecraft.world.entity.Entity.RemovalReason;
  */
 public class BotManager {
 
+
     private Integer botCount = 0;
     private final Set<BaseBot> bots;
     private final Set<Logic> activeBots;
+    private final Set<ServerPlayer> ignored;
 
     public BotManager() {
         botCount = 0;
         bots = ConcurrentHashMap.newKeySet();
         activeBots = ConcurrentHashMap.newKeySet();
+        ignored = ConcurrentHashMap.newKeySet();
     }
 
     public Set<BaseBot> getBots() {
         return bots;
+    }
+
+    public Integer getBotCount() {
+        return this.botCount;
+    }
+
+    public void setBotCount(Integer botCount) {
+        this.botCount = botCount;
+    }
+
+    public Set<Logic> getActiveBots() {
+        return this.activeBots;
+    }
+
+    public Set<ServerPlayer> getIgnored() {
+        return this.ignored;
     }
 
     public void createBots(int amount, Location loc) {
